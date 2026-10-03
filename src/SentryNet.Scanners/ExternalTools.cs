@@ -15,8 +15,11 @@ public sealed class ProcessRunner : IProcessRunner
 {
     public async Task<ToolResult> RunAsync(string executable, IReadOnlyList<string> arguments, TimeSpan timeout, CancellationToken ct)
     {
-        using var process = new Process { StartInfo = new(executable)
-        { UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true, CreateNoWindow = true } };
+        using var process = new Process
+        {
+            StartInfo = new(executable)
+            { UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true, CreateNoWindow = true }
+        };
         foreach (var argument in arguments) process.StartInfo.ArgumentList.Add(argument);
         if (!process.Start()) throw new IOException($"Could not start {executable}");
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct);

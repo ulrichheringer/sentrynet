@@ -9,7 +9,7 @@ public sealed record RuleDescriptor(string Id, Severity Severity, string Title, 
 public sealed class BuiltinRules : IRule
 {
     public string Id => "builtin";
-    public string PolicySignature => JsonSerializer.Serialize(Catalog, JsonDefaults.Options);
+    public string PolicySignature => GetType().Module.ModuleVersionId + "/" + JsonSerializer.Serialize(Catalog, JsonDefaults.Options);
     public static IReadOnlyList<RuleDescriptor> Catalog { get; } =
     [
         new("NET001", Severity.High, "Telnet service exposed", "Disable Telnet and use SSH with strong authentication.", "https://www.cisa.gov/news-events/alerts/2017/01/03/securing-network-infrastructure-devices"),
@@ -54,8 +54,16 @@ public sealed class BuiltinRules : IRule
         {
             foreach (var service in probe.Services.Where(s => s.Protocol == "tcp"))
             {
-                var id = service.Port switch { 23 => "NET001", 21 => "NET002", 22 or 3389 => "NET003",
-                    1433 or 3306 or 5432 or 6379 or 27017 => "NET004", 139 or 445 => "NET005", 25 or 110 or 143 => "NET006", _ => null };
+                var id = service.Port switch
+                {
+                    23 => "NET001",
+                    21 => "NET002",
+                    22 or 3389 => "NET003",
+                    1433 or 3306 or 5432 or 6379 or 27017 => "NET004",
+                    139 or 445 => "NET005",
+                    25 or 110 or 143 => "NET006",
+                    _ => null
+                };
                 if (id is not null) yield return F(id, $"{probe.Asset}/tcp/{service.Port}",
                     new Evidence("service", $"{service.Name} {service.Product} {service.Version}".Trim(), probe.Scanner, probe.Evidence.FirstOrDefault()?.ObservedAt ?? DateTimeOffset.UtcNow));
             }
@@ -139,10 +147,11 @@ public sealed class JsonRuleSet : IRule
     public JsonRuleSet(IEnumerable<DeclarativeRule> definitions)
     {
         rules = definitions.ToArray();
-        if (rules.Length > 1000 || rules.Select(r => r.Id).Distinct(StringComparer.OrdinalIgnoreCase).Count() != rules.Length)
+        if (rules.Length > 1000 || rules.Any(r => r is null) || rules.Select(r => r.Id).Distinct(StringComparer.OrdinalIgnoreCase).Count() != rules.Length)
             throw new ArgumentException("Custom rules must have unique IDs and at most 1000 definitions.");
         foreach (var r in rules)
-            if (!r.Id.StartsWith("CUSTOM_", StringComparison.Ordinal) || string.IsNullOrWhiteSpace(r.Title) || string.IsNullOrWhiteSpace(r.Recommendation) ||
+            if (string.IsNullOrWhiteSpace(r.Id) || !r.Id.StartsWith("CUSTOM_", StringComparison.Ordinal) || string.IsNullOrWhiteSpace(r.Scanner) ||
+                string.IsNullOrWhiteSpace(r.EvidenceKey) || r.Value is null || !Enum.IsDefined(r.Severity) || string.IsNullOrWhiteSpace(r.Title) || string.IsNullOrWhiteSpace(r.Recommendation) ||
                 r.Operator is not ("equals" or "contains" or "notEquals")) throw new ArgumentException($"Invalid custom rule: {r.Id}");
     }
     public static async Task<JsonRuleSet> LoadAsync(string path, CancellationToken ct = default)
@@ -154,16 +163,17 @@ public sealed class JsonRuleSet : IRule
     public IEnumerable<Finding> Evaluate(IReadOnlyList<ProbeResult> probes)
     {
         foreach (var rule in rules)
-        foreach (var probe in probes.Where(p => p.Scanner.Equals(rule.Scanner, StringComparison.OrdinalIgnoreCase)))
-        foreach (var evidence in probe.Evidence.Where(e => e.Key.Equals(rule.EvidenceKey, StringComparison.OrdinalIgnoreCase)))
-        {
-            var matches = rule.Operator switch
-            {
-                "equals" => evidence.Value.Equals(rule.Value, StringComparison.OrdinalIgnoreCase),
-                "notEquals" => !evidence.Value.Equals(rule.Value, StringComparison.OrdinalIgnoreCase),
-                "contains" => evidence.Value.Contains(rule.Value, StringComparison.OrdinalIgnoreCase), _ => false
-            };
-            if (matches) yield return new(rule.Id, rule.Severity, rule.Title, probe.Asset + "/" + evidence.Key, rule.Recommendation, [evidence], rule.Reference);
-        }
+            foreach (var probe in probes.Where(p => p.Scanner.Equals(rule.Scanner, StringComparison.OrdinalIgnoreCase)))
+                foreach (var evidence in probe.Evidence.Where(e => e.Key.Equals(rule.EvidenceKey, StringComparison.OrdinalIgnoreCase)))
+                {
+                    var matches = rule.Operator switch
+                    {
+                        "equals" => evidence.Value.Equals(rule.Value, StringComparison.OrdinalIgnoreCase),
+                        "notEquals" => !evidence.Value.Equals(rule.Value, StringComparison.OrdinalIgnoreCase),
+                        "contains" => evidence.Value.Contains(rule.Value, StringComparison.OrdinalIgnoreCase),
+                        _ => false
+                    };
+                    if (matches) yield return new(rule.Id, rule.Severity, rule.Title, probe.Asset + "/" + evidence.Key, rule.Recommendation, [evidence], rule.Reference);
+                }
     }
 }

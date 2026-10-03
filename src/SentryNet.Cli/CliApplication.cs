@@ -158,7 +158,8 @@ public static class CliApplication
             try
             {
                 var result = await runner.RunAsync(name, args, TimeSpan.FromSeconds(5), ct);
-                tools.Add(new { Name = name, Available = result.ExitCode == 0, Version = result.Stdout.Split('\n').FirstOrDefault() });
+                var version = string.IsNullOrWhiteSpace(result.Stdout) ? result.Stderr : result.Stdout;
+                tools.Add(new { Name = name, Available = result.ExitCode == 0, Version = version.Split('\n').FirstOrDefault()?.Trim() });
             }
             catch (Exception ex) when (ex is IOException or System.ComponentModel.Win32Exception || ex is OperationCanceledException && !ct.IsCancellationRequested)
             { tools.Add(new { Name = name, Available = false, Error = ex.Message }); }

@@ -89,7 +89,7 @@ public static class BaselineComparer
             changes.OrderBy(c => c.Kind, StringComparer.Ordinal).ThenBy(c => c.Asset, StringComparer.Ordinal).ToArray());
     }
     private static Dictionary<string, string> Inventory(ScanReport r) => r.Probes.SelectMany(p => p.Services.Select(s => new
-        { Key = $"{p.Asset}/{s.Protocol}/{s.Port}", Value = $"{s.Name} {s.Product} {s.Version}".Trim(), Source = p.Scanner }))
+    { Key = $"{p.Asset}/{s.Protocol}/{s.Port}", Value = $"{s.Name} {s.Product} {s.Version}".Trim(), Source = p.Scanner }))
         .GroupBy(s => s.Key).ToDictionary(g => g.Key, g => g.OrderBy(s => s.Source == "nmap" ? 0 : 1).First().Value);
     private static Dictionary<string, string> Certificates(ScanReport r) => r.Probes.SelectMany(p => p.Evidence.Where(e => e.Key.EndsWith(".sha256", StringComparison.Ordinal))
         .Select(e => (Key: p.Asset + "/" + p.TargetName + "/" + e.Key, e.Value))).GroupBy(x => x.Key).ToDictionary(g => g.Key, g => g.First().Value);

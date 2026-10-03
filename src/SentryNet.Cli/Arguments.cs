@@ -53,7 +53,8 @@ public sealed class Arguments
         {
             "quick" => original with { Scanners = ["dns", "tcp"], Ports = [22, 80, 443, 445, 3389] },
             "full" => original with { Scanners = ["dns", "ping", "tcp", "http", "tls", "dig", "nmap"] },
-            "standard" => original with { Scanners = ["dns", "tcp", "http", "tls"] }, _ => original
+            "standard" => original with { Scanners = ["dns", "tcp", "http", "tls"] },
+            _ => original
         };
         var overrides = new Dictionary<string, Severity>(defaults.SeverityOverrides, StringComparer.OrdinalIgnoreCase);
         foreach (var item in Csv(Get("severity", "")))
@@ -67,15 +68,21 @@ public sealed class Arguments
             Targets = Has("targets") ? Csv(Require("targets")) : defaults.Targets,
             Scope = Has("scope") ? Csv(Require("scope")) : defaults.Scope,
             // Authorization must be consciously acknowledged for each CLI execution, even with a config file.
-            Authorized = Has("authorized"), AuthorizationReference = Get("authorization-ref", defaults.AuthorizationReference),
-            Client = Get("client", defaults.Client), Engagement = Get("engagement", defaults.Engagement),
+            Authorized = Has("authorized"),
+            AuthorizationReference = Get("authorization-ref", defaults.AuthorizationReference),
+            Client = Get("client", defaults.Client),
+            Engagement = Get("engagement", defaults.Engagement),
             Ports = Has("ports") ? ParsePorts(Require("ports")) : defaults.Ports,
             HttpPorts = Has("http-ports") ? ParsePorts(Require("http-ports")) : defaults.HttpPorts,
             TlsPorts = Has("tls-ports") ? ParsePorts(Require("tls-ports")) : defaults.TlsPorts,
-            DnsServers = Has("dns-server") ? Csv(Require("dns-server")) : defaults.DnsServers, DnsPort = Number("dns-port", defaults.DnsPort),
+            DnsServers = Has("dns-server") ? Csv(Require("dns-server")) : defaults.DnsServers,
+            DnsPort = Number("dns-port", defaults.DnsPort),
             Scanners = Has("scanners") ? Csv(Require("scanners")) : defaults.Scanners,
-            Parallelism = Number("parallelism", defaults.Parallelism), TimeoutMs = Number("timeout-ms", defaults.TimeoutMs),
-            MaxHosts = Number("max-hosts", defaults.MaxHosts), DelayMs = Number("delay-ms", defaults.DelayMs), MaxDurationSeconds = Number("max-duration", defaults.MaxDurationSeconds),
+            Parallelism = Number("parallelism", defaults.Parallelism),
+            TimeoutMs = Number("timeout-ms", defaults.TimeoutMs),
+            MaxHosts = Number("max-hosts", defaults.MaxHosts),
+            DelayMs = Number("delay-ms", defaults.DelayMs),
+            MaxDurationSeconds = Number("max-duration", defaults.MaxDurationSeconds),
             RulesFile = Get("rules-file", defaults.RulesFile ?? "") is { Length: > 0 } file ? file : null,
             DisabledRules = Has("disable-rules") ? Csv(Require("disable-rules")) : defaults.DisabledRules,
             SeverityOverrides = overrides

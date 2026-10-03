@@ -2,10 +2,18 @@ using System.Collections.Concurrent;
 
 namespace SentryNet.Core;
 
-public sealed class ScanEngine(IEnumerable<IScanner> scanners, IEnumerable<IRule> rules)
+public sealed class ScanEngine
 {
-    private readonly IScanner[] scanners = scanners.ToArray();
-    private readonly IRule[] rules = rules.ToArray();
+    private readonly IScanner[] scanners;
+    private readonly IRule[] rules;
+    public ScanEngine(IEnumerable<IScanner> scanners, IEnumerable<IRule> rules)
+    {
+        this.scanners = scanners.ToArray(); this.rules = rules.ToArray();
+        if (this.scanners.Any(s => string.IsNullOrWhiteSpace(s.Name)) || this.scanners.Select(s => s.Name).Distinct(StringComparer.OrdinalIgnoreCase).Count() != this.scanners.Length)
+            throw new ArgumentException("Scanner names must be nonempty and unique; plugins cannot shadow built-in scanners.");
+        if (this.rules.Any(r => string.IsNullOrWhiteSpace(r.Id)) || this.rules.Select(r => r.Id).Distinct(StringComparer.OrdinalIgnoreCase).Count() != this.rules.Length)
+            throw new ArgumentException("Rule provider IDs must be nonempty and unique.");
+    }
     public IReadOnlyList<string> ScannerNames => scanners.Select(s => s.Name).ToArray();
     public async Task<ScanReport> ScanAsync(ScanOptions options, IProgress<string>? progress = null, CancellationToken ct = default)
     {

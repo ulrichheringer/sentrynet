@@ -78,7 +78,8 @@ public static class ReportExporter
         var rules = report.Findings.DistinctBy(f => f.RuleId).Select(f => new { id = f.RuleId, name = f.Title, shortDescription = new { text = f.Title }, help = new { text = f.Recommendation } }).ToArray();
         var document = new Dictionary<string, object>
         {
-            ["$schema"] = "https://json.schemastore.org/sarif-2.1.0.json", ["version"] = "2.1.0",
+            ["$schema"] = "https://json.schemastore.org/sarif-2.1.0.json",
+            ["version"] = "2.1.0",
             ["runs"] = new[] { new {
                 tool = new { driver = new { name = "SentryNet", version = "0.1.0", informationUri = "https://github.com/ulrichheringer/sentrynet", rules } },
                 results = report.Findings.Select(f => new { ruleId = f.RuleId,

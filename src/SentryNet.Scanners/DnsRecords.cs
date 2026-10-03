@@ -23,9 +23,13 @@ public sealed class DnsRecordResolver : IDnsRecordResolver
         var servers = addresses.Select(a => new NameServer(new IPEndPoint(a, options.DnsPort))).ToArray();
         var client = new LookupClient(new LookupClientOptions(servers)
         {
-            AutoResolveNameServers = false, UseCache = false, Retries = 0,
-            Timeout = TimeSpan.FromMilliseconds(options.TimeoutMs), ThrowDnsErrors = false,
-            ContinueOnDnsError = false, UseRandomNameServer = false
+            AutoResolveNameServers = false,
+            UseCache = false,
+            Retries = 0,
+            Timeout = TimeSpan.FromMilliseconds(options.TimeoutMs),
+            ThrowDnsErrors = false,
+            ContinueOnDnsError = false,
+            UseRandomNameServer = false
         });
         using var deadline = Probe.Timeout(options, ct);
         try

@@ -45,9 +45,24 @@ public sealed class TcpScanner : IScanner
     }
     public static string ServiceName(int port) => port switch
     {
-        21 => "ftp", 22 => "ssh", 23 => "telnet", 25 => "smtp", 53 => "dns", 80 or 8080 or 8000 => "http",
-        110 => "pop3", 139 => "netbios", 143 => "imap", 443 or 8443 => "https", 445 => "smb", 1433 => "mssql",
-        3306 => "mysql", 3389 => "rdp", 5432 => "postgresql", 6379 => "redis", 27017 => "mongodb", _ => "unknown"
+        21 => "ftp",
+        22 => "ssh",
+        23 => "telnet",
+        25 => "smtp",
+        53 => "dns",
+        80 or 8080 or 8000 => "http",
+        110 => "pop3",
+        139 => "netbios",
+        143 => "imap",
+        443 or 8443 => "https",
+        445 => "smb",
+        1433 => "mssql",
+        3306 => "mysql",
+        3389 => "rdp",
+        5432 => "postgresql",
+        6379 => "redis",
+        27017 => "mongodb",
+        _ => "unknown"
     };
 }
 public sealed class PingScanner : IScanner
@@ -66,8 +81,12 @@ public static class LocalInventory
 {
     public static object Collect() => NetworkInterface.GetAllNetworkInterfaces().Select(n => new
     {
-        n.Name, Description = n.Description, Status = n.OperationalStatus.ToString(), Type = n.NetworkInterfaceType.ToString(),
-        Mac = n.GetPhysicalAddress().ToString(), Addresses = n.GetIPProperties().UnicastAddresses.Select(a => new { Address = a.Address.ToString(), a.PrefixLength }),
+        n.Name,
+        Description = n.Description,
+        Status = n.OperationalStatus.ToString(),
+        Type = n.NetworkInterfaceType.ToString(),
+        Mac = n.GetPhysicalAddress().ToString(),
+        Addresses = n.GetIPProperties().UnicastAddresses.Select(a => new { Address = a.Address.ToString(), a.PrefixLength }),
         Gateways = n.GetIPProperties().GatewayAddresses.Select(g => g.Address.ToString()),
         DnsServers = n.GetIPProperties().DnsAddresses.Select(a => a.ToString())
     }).ToArray();

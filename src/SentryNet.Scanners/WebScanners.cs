@@ -24,8 +24,11 @@ public sealed class HttpScanner : IScanner
             var uri = new UriBuilder(scheme, target.Name, port).Uri;
             using var handler = new SocketsHttpHandler
             {
-                AllowAutoRedirect = false, UseProxy = false, UseCookies = false,
-                ConnectTimeout = TimeSpan.FromMilliseconds(options.TimeoutMs), MaxResponseHeadersLength = 32,
+                AllowAutoRedirect = false,
+                UseProxy = false,
+                UseCookies = false,
+                ConnectTimeout = TimeSpan.FromMilliseconds(options.TimeoutMs),
+                MaxResponseHeadersLength = 32,
                 ConnectCallback = async (_, token) =>
                 {
                     var socket = new Socket(IPAddress.Parse(target.Address).AddressFamily, SocketType.Stream, ProtocolType.Tcp);
@@ -101,7 +104,8 @@ public sealed class TlsScanner : IScanner
                 });
                 await stream.AuthenticateAsClientAsync(new SslClientAuthenticationOptions
                 {
-                    TargetHost = target.Name, EnabledSslProtocols = SslProtocols.None,
+                    TargetHost = target.Name,
+                    EnabledSslProtocols = SslProtocols.None,
                     CertificateRevocationCheckMode = X509RevocationMode.NoCheck,
                     CertificateChainPolicy = new X509ChainPolicy { RevocationMode = X509RevocationMode.NoCheck, DisableCertificateDownloads = true }
                 }, timeout.Token);

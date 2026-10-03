@@ -88,7 +88,9 @@ public static class JsonDefaults
 {
     public static JsonSerializerOptions Options { get; } = new()
     {
-        WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        PropertyNameCaseInsensitive = true, Converters = { new JsonStringEnumConverter() }
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true,
+        Converters = { new JsonStringEnumConverter() }
     };
 }

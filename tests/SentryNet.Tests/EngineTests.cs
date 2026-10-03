@@ -59,4 +59,28 @@ public sealed class EngineTests
             .ScanAsync(TestData.Options() with { Scanners = ["tcp", "nmap"] });
         Assert.Single(report.Findings);
     }
+    [Fact]
+    public void DuplicateScannerNamesAreRejected() => Assert.Throws<ArgumentException>(() => new ScanEngine([new FakeScanner("tcp"), new FakeScanner("TCP")], []));
+
+    [Fact]
+    public async Task ParallelismIsBoundedAcrossTargets()
+    {
+        var scanner = new TrackingScanner();
+        var report = await new ScanEngine([scanner], []).ScanAsync(TestData.Options() with
+        { Targets = ["127.0.0.0/29"], Scope = ["127.0.0.0/29"], Scanners = ["tracking"], Parallelism = 2 });
+        Assert.Equal(6, report.Probes.Count); Assert.InRange(scanner.Maximum, 1, 2);
+    }
+    private sealed class TrackingScanner : IScanner
+    {
+        public string Name => "tracking";
+        private int active;
+        private readonly object gate = new();
+        public int Maximum;
+        public async Task<ProbeResult> ScanAsync(ResolvedTarget target, ScanOptions options, CancellationToken ct)
+        {
+            lock (gate) { active++; Maximum = Math.Max(Maximum, active); }
+            try { await Task.Delay(25, ct); return new(Name, target.Address, ProbeStatus.Complete, [], []); }
+            finally { lock (gate) active--; }
+        }
+    }
 }
