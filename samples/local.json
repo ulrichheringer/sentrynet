@@ -1,0 +1,17 @@
+{
+  "targets": ["127.0.0.1"],
+  "scope": ["127.0.0.1"],
+  "authorized": false,
+  "authorizationReference": "",
+  "client": "laboratorio",
+  "engagement": "local-owned-environment",
+  "ports": [22, 80, 443],
+  "scanners": ["dns", "tcp", "http", "tls"],
+  "parallelism": 4,
+  "timeoutMs": 2000,
+  "maxHosts": 32,
+  "delayMs": 100,
+  "maxDurationSeconds": 120,
+  "disabledRules": [],
+  "severityOverrides": {}
+}

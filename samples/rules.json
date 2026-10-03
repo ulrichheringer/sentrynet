@@ -1,0 +1,13 @@
+[
+  {
+    "id": "CUSTOM_HSTS_DISABLED",
+    "scanner": "http",
+    "evidenceKey": "http.443.header.strict-transport-security",
+    "operator": "contains",
+    "value": "max-age=0",
+    "severity": "Medium",
+    "title": "HSTS policy explicitly disabled",
+    "recommendation": "Validate HTTPS coverage and configure a positive HSTS max-age.",
+    "reference": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security"
+  }
+]
