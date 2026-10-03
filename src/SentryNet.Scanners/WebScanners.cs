@@ -15,12 +15,12 @@ public sealed class HttpScanner : IScanner
     public async Task<ProbeResult> ScanAsync(ResolvedTarget target, ScanOptions options, CancellationToken ct)
     {
         var evidence = new List<Evidence>(); var errors = new List<string>();
-        var ports = options.Ports.Distinct().Where(p => p is 80 or 443 or 8000 or 8080 or 8443).ToArray();
+        var ports = options.Ports.Distinct().Where(options.HttpPorts.Contains).ToArray();
         if (ports.Length == 0) return new(Name, target.Address, ProbeStatus.Skipped, [], [], "No supported HTTP port selected.");
         foreach (var port in ports)
         {
             ct.ThrowIfCancellationRequested();
-            var scheme = port is 443 or 8443 ? "https" : "http";
+            var scheme = options.TlsPorts.Contains(port) ? "https" : "http";
             var uri = new UriBuilder(scheme, target.Name, port).Uri;
             using var handler = new SocketsHttpHandler
             {
@@ -71,7 +71,7 @@ public sealed class TlsScanner : IScanner
     public async Task<ProbeResult> ScanAsync(ResolvedTarget target, ScanOptions options, CancellationToken ct)
     {
         var evidence = new List<Evidence>(); var errors = new List<string>();
-        var ports = options.Ports.Distinct().Where(p => p is 443 or 8443 or 465 or 636 or 993 or 995).ToArray();
+        var ports = options.Ports.Distinct().Where(options.TlsPorts.Contains).ToArray();
         if (ports.Length == 0) return new(Name, target.Address, ProbeStatus.Skipped, [], [], "No direct TLS port selected (STARTTLS is not implemented).");
         foreach (var port in ports)
         {
@@ -102,7 +102,8 @@ public sealed class TlsScanner : IScanner
                 await stream.AuthenticateAsClientAsync(new SslClientAuthenticationOptions
                 {
                     TargetHost = target.Name, EnabledSslProtocols = SslProtocols.None,
-                    CertificateRevocationCheckMode = X509RevocationMode.NoCheck
+                    CertificateRevocationCheckMode = X509RevocationMode.NoCheck,
+                    CertificateChainPolicy = new X509ChainPolicy { RevocationMode = X509RevocationMode.NoCheck, DisableCertificateDownloads = true }
                 }, timeout.Token);
                 evidence.Add(Probe.E($"tls.{port}.protocol", stream.SslProtocol.ToString(), Name));
                 evidence.Add(Probe.E($"tls.{port}.cipher", stream.NegotiatedCipherSuite.ToString(), Name));

@@ -192,6 +192,7 @@ public static class CliApplication
           --client NAME --engagement NAME
           --profile quick|standard|full   Full enables optional Nmap and dig
           --ports 22,80,443,8000-8010 --scanners dns,ping,tcp,http,tls,nmap,dig
+          --http-ports 80,443,8080 --tls-ports 443,8443 (mappings intersect --ports)
           --parallelism 8 --timeout-ms 3000 --max-hosts 256 --delay-ms 50
           --max-duration 600          Global deadline in seconds
           --rules-file FILE --disable-rules HTTP003,NET003 --severity NET003=Low

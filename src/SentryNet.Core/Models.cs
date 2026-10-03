@@ -13,7 +13,7 @@ public sealed record Finding(string RuleId, Severity Severity, string Title, str
     public string Fingerprint => $"{RuleId}|{Asset}";
 }
 public sealed record ProbeResult(string Scanner, string Asset, ProbeStatus Status,
-    IReadOnlyList<Evidence> Evidence, IReadOnlyList<Service> Services, string? Error = null);
+    IReadOnlyList<Evidence> Evidence, IReadOnlyList<Service> Services, string? Error = null, string? TargetName = null);
 public sealed record ResolvedTarget(string Name, string Address);
 public sealed record ScanOptions
 {
@@ -25,6 +25,8 @@ public sealed record ScanOptions
     public string Engagement { get; init; } = "";
     public int[] Ports { get; init; } = [21, 22, 23, 25, 53, 80, 110, 139, 143, 443, 445, 3389, 5432, 6379, 8080, 8443];
     public string[] Scanners { get; init; } = ["dns", "tcp", "http", "tls"];
+    public int[] HttpPorts { get; init; } = [80, 443, 8000, 8080, 8443];
+    public int[] TlsPorts { get; init; } = [443, 8443, 465, 636, 993, 995];
     public int Parallelism { get; init; } = 8;
     public int TimeoutMs { get; init; } = 3000;
     public int MaxHosts { get; init; } = 256;
@@ -36,6 +38,10 @@ public sealed record ScanOptions
 
     public void Validate(bool requireAuthorization = true)
     {
+        if (Targets is null || Scope is null || Ports is null || HttpPorts is null || TlsPorts is null || Scanners is null || DisabledRules is null || SeverityOverrides is null ||
+            Targets.Any(string.IsNullOrWhiteSpace) || Scope.Any(string.IsNullOrWhiteSpace) || Scanners.Any(string.IsNullOrWhiteSpace) ||
+            DisabledRules.Any(string.IsNullOrWhiteSpace) || SeverityOverrides.Any(p => string.IsNullOrWhiteSpace(p.Key) || !Enum.IsDefined(p.Value)))
+            throw new ArgumentException("Configuration contains null, empty or invalid values.");
         if (requireAuthorization && (!Authorized || string.IsNullOrWhiteSpace(AuthorizationReference)))
             throw new ArgumentException("Active scans require --authorized and an authorization reference.");
         if (Targets.Length == 0 || Scope.Length == 0) throw new ArgumentException("Targets and explicit scope are required.");
@@ -44,6 +50,8 @@ public sealed record ScanOptions
             throw new ArgumentException("Invalid limits: parallelism 1..64, timeout 100..60000ms, hosts 1..4096, delay 0..60000ms, duration 1..86400s.");
         if (Ports.Length == 0 || Ports.Length > 4096 || Ports.Any(p => p is < 1 or > 65535))
             throw new ArgumentException("Specify 1..4096 ports in the range 1..65535.");
+        if (HttpPorts.Length > 4096 || TlsPorts.Length > 4096 || HttpPorts.Concat(TlsPorts).Any(p => p is < 1 or > 65535))
+            throw new ArgumentException("HTTP and TLS port mappings must contain valid port numbers.");
         if (Scanners.Length == 0) throw new ArgumentException("At least one scanner is required.");
         if (string.IsNullOrWhiteSpace(Client)) throw new ArgumentException("Client is required.");
     }

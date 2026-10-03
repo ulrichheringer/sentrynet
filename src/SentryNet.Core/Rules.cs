@@ -93,7 +93,7 @@ public sealed class BuiltinRules : IRule
             {
                 foreach (var policy in probe.Evidence.Where(e => e.Key.EndsWith(".policyErrors", StringComparison.Ordinal)))
                 {
-                    var prefix = policy.Key[..^12]; var asset = probe.Asset + "/" + prefix.TrimEnd('.');
+                    var prefix = policy.Key[..^12]; var asset = probe.Asset + "/" + (probe.TargetName ?? probe.Asset) + "/" + prefix.TrimEnd('.');
                     Evidence? Get(string key) => probe.Evidence.FirstOrDefault(e => e.Key == prefix + key);
                     if (policy.Value != SslPolicyErrors.None.ToString()) yield return F("TLS001", asset, policy);
                     var observed = policy.ObservedAt;
@@ -113,11 +113,12 @@ public sealed class BuiltinRules : IRule
                 Evidence? Get(string key) => probe.Evidence.FirstOrDefault(e => e.Key == "dns.record." + key);
                 var name = probe.Evidence.FirstOrDefault(e => e.Key == "dns.query.a")?.Value ?? probe.Asset;
                 if (Get("caa") is { Value.Length: 0 } caa) yield return F("DNS001", name, caa);
-                if (Get("mx") is not { Value.Length: > 0 }) continue;
+                if (Get("mx") is not { Value.Length: > 0 } mx || Regex.IsMatch(mx.Value, @"\sMX\s+0\s+\.$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1))) continue;
                 if (Get("txt") is { } txt)
                 {
                     if (!txt.Value.Contains("v=spf1", StringComparison.OrdinalIgnoreCase)) yield return F("DNS002", name, txt);
-                    if (Regex.IsMatch(txt.Value, @"(?:\s|""|^)\+?all(?:\s|""|$)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1))) yield return F("DNS003", name, txt);
+                    var spf = string.Join(" ", txt.Value.Split('\n').Where(line => line.Contains("v=spf1", StringComparison.OrdinalIgnoreCase)));
+                    if (Regex.IsMatch(spf, @"(?:\s|""|^)\+?all(?:\s|""|$)", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1))) yield return F("DNS003", name, txt);
                 }
                 if (Get("dmarc") is { } dmarc)
                 {

@@ -23,6 +23,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\SentryNet.Core\SentryNet.Core.csproj" />
     <ProjectReference Include="..\..\src\SentryNet.Scanners\SentryNet.Scanners.csproj" />
+    <ProjectReference Include="..\..\src\SentryNet.Cli\SentryNet.Cli.csproj" />
   </ItemGroup>
 
 </Project>

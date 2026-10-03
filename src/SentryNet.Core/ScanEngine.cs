@@ -25,14 +25,14 @@ public sealed class ScanEngine(IEnumerable<IScanner> scanners, IEnumerable<IRule
                 {
                     token.ThrowIfCancellationRequested();
                     progress?.Report($"{scanner.Name}: {target.Name} ({target.Address})");
-                    try { results.Add(await scanner.ScanAsync(target, options, token)); }
+                    try { results.Add((await scanner.ScanAsync(target, options, token)) with { TargetName = target.Name }); }
                     catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
                     catch (Exception ex) when (ex is not OutOfMemoryException)
-                    { results.Add(new(scanner.Name, target.Address, ProbeStatus.Failed, [], [], ex.Message)); }
+                    { results.Add(new(scanner.Name, target.Address, ProbeStatus.Failed, [], [], ex.Message, target.Name)); }
                     await Task.Delay(options.DelayMs, token);
                 }
             });
-        var ordered = results.OrderBy(r => r.Asset, StringComparer.Ordinal).ThenBy(r => r.Scanner, StringComparer.Ordinal).ToArray();
+        var ordered = results.OrderBy(r => r.Asset, StringComparer.Ordinal).ThenBy(r => r.TargetName, StringComparer.Ordinal).ThenBy(r => r.Scanner, StringComparer.Ordinal).ToArray();
         var findings = rules.Where(r => !options.DisabledRules.Contains(r.Id, StringComparer.OrdinalIgnoreCase))
             .SelectMany(r => r.Evaluate(ordered)).Where(f => !options.DisabledRules.Contains(f.RuleId, StringComparer.OrdinalIgnoreCase))
             .Select(f => options.SeverityOverrides.TryGetValue(f.RuleId, out var severity) ? f with { Severity = severity } : f)
