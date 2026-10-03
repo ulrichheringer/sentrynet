@@ -1,0 +1,17 @@
+# Scope and operational model
+
+Every active CLI scan requires `--authorized`, a nonempty authorization reference, targets and explicit scope. Authorization is a recorded operator assertion, not verification of ownership. The engine also validates this contract for callers using Core directly.
+
+Scope entries accept exact DNS names, IP literals and IP CIDRs. Wildcards, URLs, shell-like target strings and multicast/unspecified addresses are rejected. IPv4 ranges are expanded with a hard address limit; network and broadcast addresses are omitted except for /31 and /32. IPv6 range expansion is intentionally unsupported. IPv6 CIDR scope can constrain individual IPv6 targets.
+
+An explicitly authorized DNS name permits its resolved addresses. This trusts the configured resolver, so operators should use a trusted resolver and review the written domain scope. Names not explicitly listed are rejected before resolution, even if they might resolve into an authorized CIDR. Native target resolution uses the OS DNS resolver. DNS record auditing uses configured system DNS servers or explicit `--dns-server` addresses, with no fallback to public DNS. `_dmarc.<authorized-name>` is a derived policy query. These resolver operations are infrastructure queries, not target service scans.
+
+Connections use the addresses resolved at the start of the scan. HTTP preserves Host and SNI but uses a pinned socket, disables proxies, does not persist cookies and does not follow redirects. Response bodies are not downloaded for analysis; only response headers are collected. Cookie values are redacted before persistence. Other response headers, certificate names and DNS records can still contain sensitive data.
+
+TLS handshakes permit invalid certificates solely to collect the validation outcome and certificate properties. They send no application request. HTTP retains normal TLS validation. Revocation checking and certificate downloading are disabled for TLS inspection to avoid uncontrolled certificate infrastructure requests. TLS is negotiated using the OS/runtime policy; the tool does not force obsolete protocols.
+
+Nmap receives fixed argument-list values without a shell. It performs TCP connect/version-light probes against a pinned address, disables target DNS, and does not use NSE scripts, OS detection, UDP sweeps, arbitrary flags or exploitation. Version detection sends Nmap service probes and is therefore optional. Dig receives validated names, record types and bounded query options; it never performs AXFR or brute-force discovery. External stdout/stderr are capped and processes are killed on timeout/cancellation.
+
+Limits are conservative defaults, not guarantees about operational impact. Agree on target scope, source addresses, window, rate and allowed probes with the owner. Service connections and HTTP GET can be logged and can affect fragile devices. Concurrency is per resolved target; each target has one scanner active at a time, with a delay between operations.
+
+There is no automatic exploration, login, exploitation, credential guessing or remediation. Plugins are explicit trusted code and are outside any sandbox; review them before loading. Reports and history require filesystem permissions, encryption/retention appropriate to the engagement, and controlled sharing by the operator.

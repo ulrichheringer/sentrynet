@@ -1,0 +1,14 @@
+# Collection limits and interpretation
+
+* An open port establishes connectivity, not a vulnerability. Native service labels are inferred from port numbers. Nmap product/version results are observations, not verified CVE applicability.
+* Timeouts/unreachable ports are inconclusive and make the TCP probe partial. ICMP failure does not establish that a host is offline. Root privileges/capabilities may be necessary for ICMP depending on OS policy.
+* There is no UDP inventory, ARP sweep, OS fingerprinting, banner authentication, SMB dialect/signing negotiation, SNMP credential probing, AXFR, subdomain brute force or recursive discovery.
+* Domain checks cover the exact supplied name and `_dmarc` child. There is no organizational-domain/Public Suffix List inheritance, CAA parent traversal, DKIM selector discovery, DNSSEC validation or complete SPF/DMARC syntax evaluation. Missing CAA or DMARC on a subdomain may have an inherited policy and needs manual review. Null MX avoids mail-policy recommendations.
+* DNS native queries and dig query configured recursive resolvers. Answers are advisory and never replace pinned connection addresses. The record scanner marks CNAME-only answers inconclusive instead of claiming missing controls.
+* HTTP visits `/` once per mapped port using GET and collects headers only. It does not explore paths, follow redirects, authenticate, parse applications or test CORS with attacker origins. Missing headers and cookie flags are configuration review opportunities whose severity depends on resource/application context.
+* TLS reports one modern handshake, not an exhaustive list of supported versions/ciphers. It does not test STARTTLS, renegotiation, revocation, OCSP stapling, certificate transparency or legacy handshake support. Trust results depend on the scanner host's trust store. A valid negotiated protocol does not prove that legacy protocols are disabled.
+* A skipped selected scanner is a collection gap and produces exit code 3. For complete scans, choose applicable scanners and port mappings. Any gap prevents definitive baseline resolution, even when it affects only another scanner.
+* Cancellation/deadline does not currently persist an interrupted scan. Successfully finished scans with failed probes are persisted as partial reports.
+* Rule suppressions/overrides and policy changes make baseline remediation claims incomparable. Plugins should provide a stable, behavior-sensitive `PolicySignature`; the default is assembly identity.
+* Files are not encrypted or digitally signed, and client folders are not authorization boundaries. No multi-user API, dashboard, scheduling daemon or remote agent is implemented yet.
+* The application is an initial release, not a substitute for a penetration test or a compliance attestation.

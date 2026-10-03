@@ -482,3 +482,7 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+# SentryNet generated audit data
+reports/
+.sentrynet/
+sentrynet.json

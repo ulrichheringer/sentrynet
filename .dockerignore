@@ -1,0 +1,9 @@
+.git
+**/bin
+**/obj
+artifacts
+reports
+.sentrynet
+sentrynet.json
+**/*.user
+**/*.suo
