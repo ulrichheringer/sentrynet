@@ -50,7 +50,7 @@ public sealed record ScanOptions
 }
 public sealed record ScanReport(string SchemaVersion, Guid Id, DateTimeOffset StartedAt, DateTimeOffset FinishedAt,
     ScanOptions Options, IReadOnlyList<ResolvedTarget> Targets, IReadOnlyList<ProbeResult> Probes,
-    IReadOnlyList<Finding> Findings)
+    IReadOnlyList<Finding> Findings, string PolicyFingerprint = "")
 {
     public bool Complete => Probes.All(p => p.Status == ProbeStatus.Complete);
 }
@@ -64,6 +64,7 @@ public interface IScanner
 public interface IRule
 {
     string Id { get; }
+    string PolicySignature => GetType().AssemblyQualifiedName ?? Id;
     IEnumerable<Finding> Evaluate(IReadOnlyList<ProbeResult> probes);
 }
 public interface IReportStore

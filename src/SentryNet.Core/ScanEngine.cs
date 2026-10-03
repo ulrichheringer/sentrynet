@@ -34,8 +34,11 @@ public sealed class ScanEngine(IEnumerable<IScanner> scanners, IEnumerable<IRule
             });
         var ordered = results.OrderBy(r => r.Asset, StringComparer.Ordinal).ThenBy(r => r.Scanner, StringComparer.Ordinal).ToArray();
         var findings = rules.Where(r => !options.DisabledRules.Contains(r.Id, StringComparer.OrdinalIgnoreCase))
-            .SelectMany(r => r.Evaluate(ordered)).Select(f => options.SeverityOverrides.TryGetValue(f.RuleId, out var severity) ? f with { Severity = severity } : f)
+            .SelectMany(r => r.Evaluate(ordered)).Where(f => !options.DisabledRules.Contains(f.RuleId, StringComparer.OrdinalIgnoreCase))
+            .Select(f => options.SeverityOverrides.TryGetValue(f.RuleId, out var severity) ? f with { Severity = severity } : f)
             .DistinctBy(f => f.Fingerprint).OrderByDescending(f => f.Severity).ThenBy(f => f.Fingerprint, StringComparer.Ordinal).ToArray();
-        return new("1.0", Guid.NewGuid(), started, DateTimeOffset.UtcNow, options, targets, ordered, findings);
+        var signature = string.Join("\n", rules.OrderBy(r => r.Id, StringComparer.Ordinal).Select(r => r.PolicySignature));
+        var fingerprint = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(signature)));
+        return new("1.0", Guid.NewGuid(), started, DateTimeOffset.UtcNow, options, targets, ordered, findings, fingerprint);
     }
 }
