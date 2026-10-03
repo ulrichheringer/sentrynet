@@ -27,6 +27,8 @@ public sealed record ScanOptions
     public string[] Scanners { get; init; } = ["dns", "tcp", "http", "tls"];
     public int[] HttpPorts { get; init; } = [80, 443, 8000, 8080, 8443];
     public int[] TlsPorts { get; init; } = [443, 8443, 465, 636, 993, 995];
+    public string[] DnsServers { get; init; } = [];
+    public int DnsPort { get; init; } = 53;
     public int Parallelism { get; init; } = 8;
     public int TimeoutMs { get; init; } = 3000;
     public int MaxHosts { get; init; } = 256;
@@ -38,10 +40,12 @@ public sealed record ScanOptions
 
     public void Validate(bool requireAuthorization = true)
     {
-        if (Targets is null || Scope is null || Ports is null || HttpPorts is null || TlsPorts is null || Scanners is null || DisabledRules is null || SeverityOverrides is null ||
+        if (Targets is null || Scope is null || Ports is null || HttpPorts is null || TlsPorts is null || DnsServers is null || Scanners is null || DisabledRules is null || SeverityOverrides is null ||
             Targets.Any(string.IsNullOrWhiteSpace) || Scope.Any(string.IsNullOrWhiteSpace) || Scanners.Any(string.IsNullOrWhiteSpace) ||
             DisabledRules.Any(string.IsNullOrWhiteSpace) || SeverityOverrides.Any(p => string.IsNullOrWhiteSpace(p.Key) || !Enum.IsDefined(p.Value)))
             throw new ArgumentException("Configuration contains null, empty or invalid values.");
+        if (DnsPort is < 1 or > 65535 || DnsServers.Length > 8 || DnsServers.Any(s => !System.Net.IPAddress.TryParse(s, out _)))
+            throw new ArgumentException("Specify up to 8 DNS resolver IP addresses and a valid resolver port.");
         if (requireAuthorization && (!Authorized || string.IsNullOrWhiteSpace(AuthorizationReference)))
             throw new ArgumentException("Active scans require --authorized and an authorization reference.");
         if (Targets.Length == 0 || Scope.Length == 0) throw new ArgumentException("Targets and explicit scope are required.");

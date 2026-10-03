@@ -52,6 +52,7 @@ public static class BaselineComparer
             Set(baseline.Targets) == Set(current.Targets) && Set(baseline.Options.Ports.Distinct()) == Set(current.Options.Ports.Distinct()) &&
             Set(baseline.Options.Scanners.Select(s => s.ToLowerInvariant())) == Set(current.Options.Scanners.Select(s => s.ToLowerInvariant())) &&
             Set(baseline.Options.HttpPorts.Distinct()) == Set(current.Options.HttpPorts.Distinct()) && Set(baseline.Options.TlsPorts.Distinct()) == Set(current.Options.TlsPorts.Distinct()) &&
+            Set(baseline.Options.DnsServers) == Set(current.Options.DnsServers) && baseline.Options.DnsPort == current.Options.DnsPort &&
             Set(baseline.Options.DisabledRules) == Set(current.Options.DisabledRules) &&
             Set(baseline.Options.SeverityOverrides) == Set(current.Options.SeverityOverrides) && baseline.PolicyFingerprint == current.PolicyFingerprint &&
             !string.IsNullOrEmpty(current.PolicyFingerprint) && baseline.Complete && current.Complete;
@@ -92,7 +93,7 @@ public static class BaselineComparer
         .GroupBy(s => s.Key).ToDictionary(g => g.Key, g => g.OrderBy(s => s.Source == "nmap" ? 0 : 1).First().Value);
     private static Dictionary<string, string> Certificates(ScanReport r) => r.Probes.SelectMany(p => p.Evidence.Where(e => e.Key.EndsWith(".sha256", StringComparison.Ordinal))
         .Select(e => (Key: p.Asset + "/" + p.TargetName + "/" + e.Key, e.Value))).GroupBy(x => x.Key).ToDictionary(g => g.Key, g => g.First().Value);
-    private static Dictionary<string, string> Dns(ScanReport r) => r.Probes.Where(p => p.Scanner == "dig").SelectMany(p => p.Evidence.Where(e => e.Key.StartsWith("dns.record.", StringComparison.Ordinal))
+    private static Dictionary<string, string> Dns(ScanReport r) => r.Probes.Where(p => p.Scanner is "dig" or "dns").SelectMany(p => p.Evidence.Where(e => e.Key.StartsWith("dns.record.", StringComparison.Ordinal))
         .Select(e => (Key: p.Asset + "/" + p.TargetName + "/" + e.Key, Value: NormalizeDns(e.Value)))).GroupBy(x => x.Key).ToDictionary(g => g.Key, g => g.First().Value);
     private static string NormalizeDns(string value) => string.Join("\n", value.Split('\n', StringSplitOptions.RemoveEmptyEntries)
         .Select(line => string.Join(" ", line.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Where((_, index) => index != 1))).Order(StringComparer.Ordinal));

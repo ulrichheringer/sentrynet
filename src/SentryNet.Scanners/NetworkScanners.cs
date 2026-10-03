@@ -62,17 +62,6 @@ public sealed class PingScanner : IScanner
             reply.Status == IPStatus.Success ? null : "ICMP may be blocked; this does not prove the host is offline.");
     }
 }
-public sealed class DnsScanner : IScanner
-{
-    public string Name => "dns";
-    public Task<ProbeResult> ScanAsync(ResolvedTarget target, ScanOptions options, CancellationToken ct)
-    {
-        ct.ThrowIfCancellationRequested();
-        // Forward resolution was already authorized and pinned by the engine. Avoid a second resolution (rebinding).
-        return Task.FromResult(new ProbeResult(Name, target.Address, ProbeStatus.Complete,
-            [Probe.E("dns.name", target.Name, Name), Probe.E("dns.address", target.Address, Name)], []));
-    }
-}
 public static class LocalInventory
 {
     public static object Collect() => NetworkInterface.GetAllNetworkInterfaces().Select(n => new

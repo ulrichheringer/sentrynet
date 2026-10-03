@@ -108,7 +108,7 @@ public sealed class BuiltinRules : IRule
                     if (Get("protocol") is { } protocol && protocol.Value is not ("Tls12" or "Tls13")) yield return F("TLS007", asset, protocol);
                 }
             }
-            if (probe.Scanner == "dig")
+            if (probe.Scanner is "dig" or "dns")
             {
                 Evidence? Get(string key) => probe.Evidence.FirstOrDefault(e => e.Key == "dns.record." + key);
                 var name = probe.Evidence.FirstOrDefault(e => e.Key == "dns.query.a")?.Value ?? probe.Asset;

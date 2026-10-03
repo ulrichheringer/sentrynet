@@ -78,6 +78,7 @@ public static class CliApplication
             var baseline = args.Has("baseline") ? await store.LoadAsync(args.Require("baseline"), ct) : null;
             var services = new ServiceCollection();
             services.AddSingleton<IProcessRunner, ProcessRunner>();
+            services.AddSingleton<IDnsRecordResolver, DnsRecordResolver>();
             services.AddSingleton<IScanner, DnsScanner>(); services.AddSingleton<IScanner, PingScanner>();
             services.AddSingleton<IScanner, TcpScanner>(); services.AddSingleton<IScanner, HttpScanner>();
             services.AddSingleton<IScanner, TlsScanner>(); services.AddSingleton<IScanner, NmapScanner>(); services.AddSingleton<IScanner, DigScanner>();
@@ -193,6 +194,7 @@ public static class CliApplication
           --profile quick|standard|full   Full enables optional Nmap and dig
           --ports 22,80,443,8000-8010 --scanners dns,ping,tcp,http,tls,nmap,dig
           --http-ports 80,443,8080 --tls-ports 443,8443 (mappings intersect --ports)
+          --dns-server IP[,IP] --dns-port 53 (default: system DNS resolvers)
           --parallelism 8 --timeout-ms 3000 --max-hosts 256 --delay-ms 50
           --max-duration 600          Global deadline in seconds
           --rules-file FILE --disable-rules HTTP003,NET003 --severity NET003=Low

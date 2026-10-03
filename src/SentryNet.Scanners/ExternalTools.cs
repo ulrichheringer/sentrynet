@@ -95,12 +95,18 @@ public sealed class DigScanner(IProcessRunner runner) : IScanner
         foreach (var type in new[] { "A", "AAAA", "MX", "NS", "SOA", "TXT", "CAA", "DMARC" })
         {
             var name = type == "DMARC" ? "_dmarc." + target.Name : target.Name;
-            var result = await runner.RunAsync("dig", [name, type == "DMARC" ? "TXT" : type,
-                "+noall", "+answer", "+comments", "+tries=1", $"+time={Math.Max(1, options.TimeoutMs / 1000)}"],
+            var arguments = new List<string> { name, type == "DMARC" ? "TXT" : type,
+                "+noall", "+answer", "+comments", "+tries=1", $"+time={Math.Max(1, options.TimeoutMs / 1000)}", "-p", options.DnsPort.ToString(System.Globalization.CultureInfo.InvariantCulture) };
+            if (options.DnsServers.Length > 0) arguments.Add("@" + options.DnsServers[0]);
+            var result = await runner.RunAsync("dig", arguments,
                 TimeSpan.FromMilliseconds(options.TimeoutMs + 2000), ct);
             if (result.ExitCode != 0 || !(result.Stdout.Contains("status: NOERROR", StringComparison.Ordinal) || result.Stdout.Contains("status: NXDOMAIN", StringComparison.Ordinal)))
             { errors.Add($"{type}: DNS query unsuccessful (exit {result.ExitCode})."); continue; }
-            evidence.Add(Probe.E("dns.record." + type.ToLowerInvariant(), ParseAnswers(result.Stdout), Name));
+            var answers = ParseAnswers(result.Stdout);
+            if (answers.Contains("\tCNAME\t", StringComparison.OrdinalIgnoreCase) &&
+                !answers.Contains("\t" + (type == "DMARC" ? "TXT" : type) + "\t", StringComparison.OrdinalIgnoreCase))
+            { errors.Add($"{type}: CNAME-only answer requires manual review."); continue; }
+            evidence.Add(Probe.E("dns.record." + type.ToLowerInvariant(), answers, Name));
             evidence.Add(Probe.E("dns.query." + type.ToLowerInvariant(), name, Name));
             await Task.Delay(options.DelayMs, ct);
         }

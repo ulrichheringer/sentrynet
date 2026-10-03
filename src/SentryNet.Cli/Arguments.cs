@@ -5,7 +5,7 @@ namespace SentryNet.Cli;
 public sealed class Arguments
 {
     private static readonly HashSet<string> Flags = ["authorized", "quiet", "json", "help"];
-    private static readonly HashSet<string> Values = ["targets", "scope", "authorization-ref", "client", "engagement", "ports", "http-ports", "tls-ports", "scanners", "parallelism", "timeout-ms", "max-hosts", "delay-ms", "max-duration", "rules-file", "disable-rules", "severity", "config", "targets-file", "history-dir", "output", "formats", "baseline", "fail-on", "input", "current", "plugin", "profile"];
+    private static readonly HashSet<string> Values = ["targets", "scope", "authorization-ref", "client", "engagement", "ports", "http-ports", "tls-ports", "dns-server", "dns-port", "scanners", "parallelism", "timeout-ms", "max-hosts", "delay-ms", "max-duration", "rules-file", "disable-rules", "severity", "config", "targets-file", "history-dir", "output", "formats", "baseline", "fail-on", "input", "current", "plugin", "profile"];
     private readonly Dictionary<string, string> options = new(StringComparer.Ordinal);
     public string Command { get; }
     public Arguments(string[] args)
@@ -72,6 +72,7 @@ public sealed class Arguments
             Ports = Has("ports") ? ParsePorts(Require("ports")) : defaults.Ports,
             HttpPorts = Has("http-ports") ? ParsePorts(Require("http-ports")) : defaults.HttpPorts,
             TlsPorts = Has("tls-ports") ? ParsePorts(Require("tls-ports")) : defaults.TlsPorts,
+            DnsServers = Has("dns-server") ? Csv(Require("dns-server")) : defaults.DnsServers, DnsPort = Number("dns-port", defaults.DnsPort),
             Scanners = Has("scanners") ? Csv(Require("scanners")) : defaults.Scanners,
             Parallelism = Number("parallelism", defaults.Parallelism), TimeoutMs = Number("timeout-ms", defaults.TimeoutMs),
             MaxHosts = Number("max-hosts", defaults.MaxHosts), DelayMs = Number("delay-ms", defaults.DelayMs), MaxDurationSeconds = Number("max-duration", defaults.MaxDurationSeconds),
