@@ -53,7 +53,8 @@ public sealed class NmapScanner(IProcessRunner runner) : IScanner
     public string Name => "nmap";
     public async Task<ProbeResult> ScanAsync(ResolvedTarget target, ScanOptions options, CancellationToken ct)
     {
-        // No NSE scripts, OS detection, UDP sweep, shell, or user supplied command flags.
+        // No explicit NSE selection, OS detection, UDP sweep, shell or user supplied flags.
+        // Nmap -sV may invoke its internal 'version' category scripts; see the security model.
         var seconds = Math.Min(options.MaxDurationSeconds, Math.Max(10, (long)options.Ports.Length * (options.TimeoutMs + options.DelayMs) / 1000 + 10));
         var arguments = new List<string> { "-sT", "-sV", "--version-light", "-Pn", "-n", "--max-retries", "1", "--max-parallelism", "1",
             "--scan-delay", $"{Math.Max(10, options.DelayMs)}ms", "--host-timeout", $"{seconds}s", "-p", string.Join(",", options.Ports.Distinct()), "-oX", "-" };

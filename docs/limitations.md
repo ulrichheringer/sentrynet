@@ -1,6 +1,7 @@
 # Collection limits and interpretation
 
 * An open port establishes connectivity, not a vulnerability. Native service labels are inferred from port numbers. Nmap product/version results are observations, not verified CVE applicability.
+* Optional Nmap `-sV` identification can use internal NSE scripts from the `version` category. SentryNet does not select vulnerability, exploit or credential scripts. Operators must approve service-identification probes; select native TCP inventory when the engagement excludes them.
 * Timeouts/unreachable ports are inconclusive and make the TCP probe partial. ICMP failure does not establish that a host is offline. Root privileges/capabilities may be necessary for ICMP depending on OS policy.
 * There is no UDP inventory, ARP sweep, OS fingerprinting, banner authentication, SMB dialect/signing negotiation, SNMP credential probing, AXFR, subdomain brute force or recursive discovery.
 * Domain checks cover the exact supplied name and `_dmarc` child. There is no organizational-domain/Public Suffix List inheritance, CAA parent traversal, DKIM selector discovery, DNSSEC validation or complete SPF/DMARC syntax evaluation. Missing CAA or DMARC on a subdomain may have an inherited policy and needs manual review. Null MX avoids mail-policy recommendations.
