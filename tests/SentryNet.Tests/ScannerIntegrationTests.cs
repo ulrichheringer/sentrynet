@@ -51,7 +51,11 @@ public sealed class ScannerIntegrationTests
         using var rsa = RSA.Create(2048);
         var request = new CertificateRequest("CN=localhost", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
         var sans = new SubjectAlternativeNameBuilder(); sans.AddDnsName("localhost"); request.CertificateExtensions.Add(sans.Build());
-        using var certificate = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(10));
+        using var created = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(10));
+        // Schannel server credentials require a key container rather than an ephemeral generated key.
+        // This does not install the certificate into a trust store; disposal removes the temporary key.
+        using var certificate = new X509Certificate2(created.Export(X509ContentType.Pfx), (string?)null,
+            OperatingSystem.IsWindows() ? X509KeyStorageFlags.UserKeySet : X509KeyStorageFlags.EphemeralKeySet);
         using var listener = new TcpListener(IPAddress.Loopback, 0); listener.Start();
         var port = ((IPEndPoint)listener.LocalEndpoint).Port;
         using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(10));
@@ -64,7 +68,8 @@ public sealed class ScannerIntegrationTests
             catch (IOException) { return 0; } // A close/reset is acceptable; no application data.
         }, deadline.Token);
         var result = await new TlsScanner().ScanAsync(new("localhost", "127.0.0.1"), TestData.Options() with { Ports = [port], TlsPorts = [port] }, deadline.Token);
-        Assert.Equal(ProbeStatus.Complete, result.Status); Assert.Equal(0, await server);
+        var received = await server;
+        Assert.True(result.Status == ProbeStatus.Complete, result.Error); Assert.Equal(0, received);
         Assert.Contains(result.Evidence, e => e.Key.EndsWith(".policyErrors", StringComparison.Ordinal) && e.Value.Contains("ChainErrors", StringComparison.Ordinal));
         Assert.Contains(result.Evidence, e => e.Key.EndsWith(".sha256", StringComparison.Ordinal) && e.Value.Length == 64);
         Assert.Contains(new BuiltinRules().Evaluate([result]), f => f.RuleId == "TLS001");
