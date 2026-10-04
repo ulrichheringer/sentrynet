@@ -54,8 +54,9 @@ public sealed class ScannerIntegrationTests
         using var created = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(10));
         // Schannel server credentials require a key container rather than an ephemeral generated key.
         // This does not install the certificate into a trust store; disposal removes the temporary key.
-        using var certificate = new X509Certificate2(created.Export(X509ContentType.Pfx), (string?)null,
-            OperatingSystem.IsWindows() ? X509KeyStorageFlags.UserKeySet : X509KeyStorageFlags.EphemeralKeySet);
+        using var certificate = OperatingSystem.IsWindows()
+            ? new X509Certificate2(created.Export(X509ContentType.Pfx), (string?)null, X509KeyStorageFlags.UserKeySet)
+            : new X509Certificate2(created);
         using var listener = new TcpListener(IPAddress.Loopback, 0); listener.Start();
         var port = ((IPEndPoint)listener.LocalEndpoint).Port;
         using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(10));
